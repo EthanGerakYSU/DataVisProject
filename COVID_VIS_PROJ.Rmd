@@ -20,25 +20,68 @@ knitr::opts_chunk$set(echo = TRUE)
 
 library(covidcast)
 library(dplyr)
+library(choroplethrMaps)
 ```
 
 
 ```{r test}
-cli <- suppressMessages(
-  covidcast_signal(data_source = "fb-survey", signal = "smoothed_cli",
-                   start_day = "2020-05-01", end_day = "2020-05-07",
-                   geo_type = "county")
-)
-knitr::kable(head(cli))
-
-library(covidcast)
 
 cc_data <- suppressMessages(
-  covidcast_signal(data_source = "doctor-visits", signal = "smoothed_adj_cli",
-                   start_day = "2021-03-09", end_day = "2021-04-06",
-                   geo_type = "county")
+covidcast_signal(data_source = "indicator-combination", signal = "confirmed_incidence_prop",
+                 start_day = "2020-09-08", end_day = "2020-10-08",
+                 geo_type = "state")
+)
+plot(cc_data, choro_col = cm.colors(10), alpha = 0.4,
+     title = "Combination of COVID-19")
+
+avgCC = cc_data %>% group_by(geo_value) %>% summarise(avg = mean(value))
+
+
+avgCC = avgCC %>% rename(
+   region = geo_value,
+   value= avg
 )
 
+
+data(state.map)
+state.map
+
+
+state.name[match(avgCC["region"],state.abb)]
+
+stateFromLower <-function(x) {
+   #read 52 state codes into local variable [includes DC (Washington D.C. and PR (Puerto Rico)]
+  st.codes<-data.frame(
+                      state=as.factor(c("ak", "al", "ar", "az", "ca", "co", "ct", "dc", "de", "fl", "ga",
+                                         "hi", "ia", "id", "il", "in", "ks", "ky", "la", "ma", "md", "me",
+                                         "mi", "mn", "mo", "ms",  "mt", "nc", "nd", "ne", "nh", "nj", "nm",
+                                         "nv", "ny", "oh", "ok", "or", "pa", "pr", "ri", "sc", "sd", "tn",
+                                         "tx", "ut", "va", "vt", "wa", "wi", "wv", "wy")),
+                      full=as.factor(c("alaska","alabama","arkansas","arizona","california","colorado",
+                                       "connecticut","district of columbia","delaware","florida","georgia",
+                                       "hawaii","iowa","idaho","illinois","indiana","kansas","kentucky",
+                                       "louisiana","massachusetts","maryland","maine","michigan","minnesota",
+                                       "missouri","mississippi","montana","north carolina","north dakota",
+                                       "nebraska","new hampshire","new jersey","new mexico","nevada",
+                                       "new york","ohio","oklahoma","oregon","pennsylvania","puerto rico",
+                                       "rhode island","south carolina","south dakota","tennessee","texas",
+                                       "utah","virginia","vermont","washington","wisconsin",
+                                       "west virginia","wyoming"))
+                       )
+     #create an nx1 data.frame of state codes from source column
+  st.x<-data.frame(state=x)
+     #match source codes with codes from 'st.codes' local variable and use to return the full state name
+  refac.x<-st.codes$full[match(st.x$state,st.codes$state)]
+     #return the full state names in the same order in which they appeared in the original source
+  return(refac.x)
+ 
+}
+
+avgCC$region = stateFromLower(avgCC$region)
+
+state_choropleth(
+  avgCC
+)
 ```
 
 
