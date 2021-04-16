@@ -2,7 +2,9 @@
 title: "COIVD Visualizatoin Project"
 author: "Ethan Gerak"
 date: "4/13/2021"
-output: html_document
+output:
+  html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
@@ -21,33 +23,72 @@ knitr::opts_chunk$set(echo = TRUE)
 library(covidcast)
 library(dplyr)
 library(choroplethrMaps)
+library(choroplethr)
+library(plotly)
 ```
 
 
-```{r test}
+```{r test, echo = FALSE}
+###https://delphi.cmu.edu/covidcast/export/
 
-cc_data <- suppressMessages(
+cc_data_sep20 <- suppressMessages(
 covidcast_signal(data_source = "indicator-combination", signal = "confirmed_incidence_prop",
-                 start_day = "2020-09-08", end_day = "2020-10-08",
+                 start_day = "2020-09-08", end_day = "2020-09-30",
                  geo_type = "state")
 )
-plot(cc_data, choro_col = cm.colors(10), alpha = 0.4,
-     title = "Combination of COVID-19")
+cc_data_oct20 <- suppressMessages(
+covidcast_signal(data_source = "indicator-combination", signal = "confirmed_incidence_prop",
+                 start_day = "2020-10-01", end_day = "2020-10-31",
+                 geo_type = "state")
+)
+cc_data_nov20 <- suppressMessages(
+covidcast_signal(data_source = "indicator-combination", signal = "confirmed_incidence_prop",
+                 start_day = "2020-11-01", end_day = "2020-11-30",
+                 geo_type = "state")
+)
+cc_data_dec20 <- suppressMessages(
+covidcast_signal(data_source = "indicator-combination", signal = "confirmed_incidence_prop",
+                 start_day = "2020-12-01", end_day = "2020-12-31",
+                 geo_type = "state")
+)
+cc_data_jan21 <- suppressMessages(
+covidcast_signal(data_source = "indicator-combination", signal = "confirmed_incidence_prop",
+                 start_day = "2021-01-01", end_day = "2021-01-31",
+                 geo_type = "state")
+)
 
-avgCC = cc_data %>% group_by(geo_value) %>% summarise(avg = mean(value))
-
-
-avgCC = avgCC %>% rename(
-   region = geo_value,
-   value= avg
+cc_data_feb21 <- suppressMessages(
+covidcast_signal(data_source = "indicator-combination", signal = "confirmed_incidence_prop",
+                 start_day = "2021-02-01", end_day = "2021-02-28",
+                 geo_type = "state")
+)
+cc_data_mar21 <- suppressMessages(
+covidcast_signal(data_source = "indicator-combination", signal = "confirmed_incidence_prop",
+                 start_day = "2021-03-01", end_day = "2021-03-31",
+                 geo_type = "state")
 )
 
 
-data(state.map)
-state.map
+# cc_data_jan20 <- suppressMessages(
+# covidcast_signal(data_source = "indicator-combination", signal = "confirmed_incidence_prop",
+#                  start_day = "2021-01-01", end_day = "2021-01-31",
+#                  geo_type = "state")
 
 
-state.name[match(avgCC["region"],state.abb)]
+
+
+# plot(cc_data_sep20, choro_col = cm.colors(10), alpha = 0.4,
+#      title = "Combination of COVID-19")
+
+
+
+
+
+
+
+
+
+#state.name[match(avgCC["region"],state.abb)]
 
 stateFromLower <-function(x) {
    #read 52 state codes into local variable [includes DC (Washington D.C. and PR (Puerto Rico)]
@@ -77,11 +118,115 @@ stateFromLower <-function(x) {
  
 }
 
-avgCC$region = stateFromLower(avgCC$region)
+avg = function(data) {
+  avgCC = data %>% group_by(geo_value) %>% summarise(avg = mean(value))
+   avgCC = avgCC %>% rename(
+   region = geo_value,
+   value= avg)
+}
 
-state_choropleth(
-  avgCC
-)
+
+
+###Value we are plotting is cases per 100k
+
+#avgCC$region = stateFromLower(avg(cc_data_sep20)$region)
+
+
+
+#avgCC$value = avg(cc_data_sep20)$value
+
+
+#state_choropleth(avgCC)
+
+avg_sep20 = avg(cc_data_sep20)
+avg_sep20$region = toupper(avg_sep20$region)
+SepCovidGraph <-avg_sep20 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=0, zmax=110, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="Average Daily Cases for September")
+
+SepCovidGraph
+
+
+
+avg_oct20 = avg(cc_data_oct20)
+avg_oct20$region = toupper(avg_oct20$region)
+
+OctCovidGraph <-avg_oct20 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=0, zmax=110, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="Average Daily Cases for October")
+
+OctCovidGraph
+
+avg_nov20 = avg(cc_data_nov20)
+avg_nov20$region = toupper(avg_nov20$region)
+NovCovidGraph <-avg_nov20 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=0, zmax=110, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="Average Daily Cases for November")
+
+NovCovidGraph
+
+avg_dec20 = avg(cc_data_dec20)
+avg_dec20$region = toupper(avg_dec20$region)
+DecCovidGraph <-avg_dec20 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=0, zmax=110, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="Average Daily Cases for December")
+
+DecCovidGraph
+
+avg_jan21 = avg(cc_data_jan21)
+avg_jan21$region = toupper(avg_jan21$region)
+JanCovidGraph <-avg_jan21 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=0, zmax=110, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="Average Daily Cases for January")
+
+JanCovidGraph
+
+
+avg_feb21 = avg(cc_data_feb21)
+avg_feb21$region = toupper(avg_feb21$region)
+FebCovidGraph <-avg_feb21 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=0, zmax=110, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="Average Daily Cases for February")
+
+FebCovidGraph
+
+avg_mar21 = avg(cc_data_mar21)
+avg_mar21$region = toupper(avg_mar21$region)
+MarCovidGraph <-avg_mar21 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=0, zmax=110, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="Average Daily Cases for March")
+
+MarCovidGraph
+
+
 ```
 
 
