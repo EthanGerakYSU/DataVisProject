@@ -18,17 +18,25 @@ knitr::opts_chunk$set(echo = TRUE)
 #                          subdir = "R-packages/covidcast",
 #                          build_vignettes = TRUE,
 #                          dependencies = TRUE)
-
+X2020_US_County_Level_Presidential_Results <- read.csv("C:/Users/ethan/Downloads/2020_US_County_Level_Presidential_Results.csv")
 
 library(covidcast)
 library(dplyr)
 library(choroplethrMaps)
 library(choroplethr)
 library(plotly)
+library(readxl)
+library(readr)
+
+
+politics_clean <- read_csv("politicsmed.csv")
+
+politics_c <- read_excel("poltiics_c.xlsx")
+politics_d <- read_excel("politics_d.xlsx")
 ```
 
 
-```{r test, echo = FALSE}
+```{r data, include = FALSE}
 ###https://delphi.cmu.edu/covidcast/export/
 
 cc_data_sep20 <- suppressMessages(
@@ -68,17 +76,184 @@ covidcast_signal(data_source = "indicator-combination", signal = "confirmed_inci
                  geo_type = "state")
 )
 
-
-# cc_data_jan20 <- suppressMessages(
-# covidcast_signal(data_source = "indicator-combination", signal = "confirmed_incidence_prop",
-#                  start_day = "2021-01-01", end_day = "2021-01-31",
-#                  geo_type = "state")
+cc_data_us_alltime = covidcast_signal(data_source = "indicator-combination", signal = "confirmed_incidence_prop",
+                 start_day = "2020-09-08", end_day = "2021-03-31",
+                 geo_type = "nation")
 
 
+########################################################################################################################
+
+WS_data_sep20 <- suppressMessages(
+covidcast_signal(data_source = "fb-survey", signal = "smoothed_worried_become_ill",
+                 start_day = "2020-09-08", end_day = "2020-09-30",
+                 geo_type = "state")
+)
+WS_data_oct20 <- suppressMessages(
+covidcast_signal(data_source = "fb-survey", signal = "smoothed_worried_become_ill",
+                 start_day = "2020-10-01", end_day = "2020-10-31",
+                 geo_type = "state")
+)
+WS_data_nov20 <- suppressMessages(
+covidcast_signal(data_source = "fb-survey", signal = "smoothed_worried_become_ill",
+                 start_day = "2020-11-01", end_day = "2020-11-30",
+                 geo_type = "state")
+)
+WS_data_dec20 <- suppressMessages(
+covidcast_signal(data_source = "fb-survey", signal = "smoothed_worried_become_ill",
+                 start_day = "2020-12-01", end_day = "2020-12-31",
+                 geo_type = "state")
+)
+WS_data_jan21 <- suppressMessages(
+covidcast_signal(data_source = "fb-survey", signal = "smoothed_worried_become_ill",
+                 start_day = "2021-01-01", end_day = "2021-01-31",
+                 geo_type = "state")
+)
+
+WS_data_feb21 <- suppressMessages(
+covidcast_signal(data_source = "fb-survey", signal = "smoothed_worried_become_ill",
+                 start_day = "2021-02-01", end_day = "2021-02-28",
+                 geo_type = "state")
+)
+WS_data_mar21 <- suppressMessages(
+covidcast_signal(data_source = "fb-survey", signal = "smoothed_worried_become_ill",
+                 start_day = "2021-03-01", end_day = "2021-03-31",
+                 geo_type = "state")
+)
+
+WS_data_us_alltime = covidcast_signal(data_source = "fb-survey", signal = "smoothed_worried_become_ill",
+                 start_day = "2020-09-08", end_day = "2021-03-31",
+                 geo_type = "nation")
 
 
-# plot(cc_data_sep20, choro_col = cm.colors(10), alpha = 0.4,
-#      title = "Combination of COVID-19")
+##############################################################################
+MW_data <- suppressMessages(
+covidcast_signal(data_source = "fb-survey", signal = "smoothed_wearing_mask_7d",
+                 start_day = "2021-03-01", end_day = "2021-03-31",
+                 geo_type = "county")
+)
+
+OMW_data <- suppressMessages(
+covidcast_signal(data_source = "fb-survey", signal = "smoothed_others_masked",
+                 start_day = "2021-03-01", end_day = "2021-03-31",
+                 geo_type = "county")
+)
+
+IE_data <- suppressMessages(
+covidcast_signal(data_source = "fb-survey", signal = "smoothed_large_event_indoors_1d",
+                 start_day = "2021-03-01", end_day = "2021-03-31",
+                 geo_type = "county")
+)
+
+
+CC1_data <- suppressMessages(
+covidcast_signal(data_source = "indicator-combination", signal = "confirmed_incidence_prop",
+                 start_day = "2021-03-01", end_day = "2021-03-31",
+                 geo_type = "county")
+)
+
+D_data <- suppressMessages(
+covidcast_signal(data_source = "indicator-combination", signal = "deaths_incidence_prop",
+                 start_day = "2021-03-01", end_day = "2021-03-31",
+                 geo_type = "county")
+)
+
+VA_data <- suppressMessages(
+covidcast_signal(data_source = "fb-survey", signal = "smoothed_covid_vaccinated_or_accept",
+                 start_day = "2021-03-01", end_day = "2021-03-31",
+                 geo_type = "county")
+)
+
+
+####################################################################################################
+
+
+
+
+
+X2020_US_County_Level_Presidential_Results$county_fips = as.character(X2020_US_County_Level_Presidential_Results$county_fips)
+
+Politics_data <- left_join(MW_data, X2020_US_County_Level_Presidential_Results, by = c("geo_value" = "county_fips"))
+
+OMW_data = OMW_data %>% rename(
+  OWMvalue = value
+)
+OMW_data = select(OMW_data, geo_value, time_value, OWMvalue)
+
+IE_data = IE_data %>% rename(
+  IEvalue = value
+)
+IE_data = select(IE_data, geo_value, time_value, IEvalue)
+
+CC1_data = CC1_data %>% rename(
+  CC1value = value
+)
+CC1_data = select(CC1_data, geo_value, time_value, CC1value)
+
+VA_data = VA_data %>% rename(
+  VAvalue = value
+)
+VA_data = select(VA_data, geo_value, time_value, VAvalue)
+
+D_data = D_data %>% rename(
+  Dvalue = value
+)
+D_data = select(D_data, geo_value, time_value, Dvalue)
+
+
+
+
+
+Politics_data <- left_join(OMW_data, Politics_data, by = c("geo_value" = "geo_value", "time_value" = "time_value"))
+Politics_data <- left_join(IE_data, Politics_data, by = c("geo_value" = "geo_value", "time_value" = "time_value"))
+Politics_data <- left_join(CC1_data, Politics_data, by = c("geo_value" = "geo_value", "time_value" = "time_value"))
+Politics_data <- left_join(VA_data, Politics_data, by = c("geo_value" = "geo_value", "time_value" = "time_value"))
+Politics_data <- left_join(D_data, Politics_data, by = c("geo_value" = "geo_value", "time_value" = "time_value"))
+
+
+Politics_data = na.omit(Politics_data)
+
+skimr::skim(Politics_data)
+
+Politics_data
+
+pd = select(Politics_data, geo_value, value, OWMvalue, IEvalue, VAvalue, CC1value, Dvalue, county_name, votes_gop, votes_dem, total_votes)
+head(pd)
+
+
+pd$county_name = as.factor(pd$county_name)
+by_geo_value = pd %>% group_by(county_name)
+
+x = by_geo_value %>% summarise(
+  "Avg_mask_wearers" = median(value),
+  "Avg_other_mask_wearers" = median(OWMvalue),
+  "Avg_attended_large_indoor_event" = median(IEvalue),
+  "Avg_vaccience_acceptance" = median(VAvalue),
+  "Avg_number_of_confirmed_cases" = median(CC1value),
+  "Avg_number_of_COVID_deaths" = median(Dvalue)
+)
+
+
+pd = left_join(pd, x, by = c("county_name" = "county_name"))
+
+ 
+
+pd$AboveAvg = ifelse(pd$value > pd$Avg_mask_wearers, 1, 0)
+
+pd$Politics = ifelse(pd$votes_dem > pd$votes_gop, "Dem", "Gop")
+
+county_df = map_data("county")
+
+
+test = pd %>% group_by(Politics) %>% summarise("Percent of Mask Wearers" = median(Avg_mask_wearers),
+                                        "Percent of Others Who Wear Masks" = median(Avg_other_mask_wearers),
+                                        "Percent of Others Who Attended a Large Indoor Event" = median(Avg_attended_large_indoor_event),
+                                        "Percent of Other who Would Get or Have Gotten the Vaccine" = median(Avg_number_of_confirmed_cases),
+                                        "Average COVID Cases per 100,000" = median(Avg_number_of_confirmed_cases),
+                                        "Average COVID Deaths per 100,000" = median(Avg_number_of_COVID_deaths)
+                                        )
+
+# readr::write_csv(test, file = "politics.csv")
+################################################################################
 
 
 
@@ -88,7 +263,11 @@ covidcast_signal(data_source = "indicator-combination", signal = "confirmed_inci
 
 
 
-#state.name[match(avgCC["region"],state.abb)]
+
+
+
+
+################################################################################
 
 stateFromLower <-function(x) {
    #read 52 state codes into local variable [includes DC (Washington D.C. and PR (Puerto Rico)]
@@ -127,17 +306,10 @@ avg = function(data) {
 
 
 
-###Value we are plotting is cases per 100k
-
-#avgCC$region = stateFromLower(avg(cc_data_sep20)$region)
+```
 
 
-
-#avgCC$value = avg(cc_data_sep20)$value
-
-
-#state_choropleth(avgCC)
-
+``` {r plotting, echo = FALSE}
 avg_sep20 = avg(cc_data_sep20)
 avg_sep20$region = toupper(avg_sep20$region)
 SepCovidGraph <-avg_sep20 %>% 
@@ -226,7 +398,203 @@ MarCovidGraph <-avg_mar21 %>%
 
 MarCovidGraph
 
+  
+ggplot(cc_data_us_alltime, aes(time_value, value)) + 
+  geom_line() + 
+  ggtitle("US Covid Cases per 100,000") + 
+  scale_x_date(date_labels="%b %y",date_breaks  ="1 month") + 
+  labs(x = "Date",
+       y = "Positive Cases")
 
+##################################### FEAR OF COIVD ###########################################
+
+avg_sep20 = avg(WS_data_sep20)
+avg_sep20$region = toupper(avg_sep20$region)
+SepCovidGraph <-avg_sep20 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=45, zmax=75, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="September Worried About Contracting COVID")
+
+SepCovidGraph
+
+
+
+avg_oct20 = avg(WS_data_oct20)
+avg_oct20$region = toupper(avg_oct20$region)
+
+OctCovidGraph <-avg_oct20 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=45, zmax=75, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="October Worried About Contracting COVID")
+
+OctCovidGraph
+
+avg_nov20 = avg(WS_data_nov20)
+avg_nov20$region = toupper(avg_nov20$region)
+NovCovidGraph <-avg_nov20 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=45, zmax=75, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="November Worried About Contracting COVID")
+
+NovCovidGraph
+
+avg_dec20 = avg(WS_data_dec20)
+avg_dec20$region = toupper(avg_dec20$region)
+DecCovidGraph <-avg_dec20 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=45, zmax=75, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="Decemeber Worried About Contracting COVID")
+
+DecCovidGraph
+
+avg_jan21 = avg(WS_data_jan21)
+avg_jan21$region = toupper(avg_jan21$region)
+JanCovidGraph <-avg_jan21 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=45, zmax=75, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="January Worried About Contracting COVID")
+
+JanCovidGraph
+
+
+avg_feb21 = avg(WS_data_feb21)
+avg_feb21$region = toupper(avg_feb21$region)
+FebCovidGraph <-avg_feb21 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=45, zmax=75, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="February Worried About Contracting COVID")
+
+FebCovidGraph
+
+avg_mar21 = avg(WS_data_mar21)
+avg_mar21$region = toupper(avg_mar21$region)
+MarCovidGraph <-avg_mar21 %>% 
+  plot_geo(locationmode = 'USA-states') %>% 
+  add_trace(
+    z = ~value, color = ~value, colors = "Greys",
+    zmin=45, zmax=75, 
+    locations = ~region) %>% 
+  layout(geo=list(scope='usa'), title="March Worried About Contracting COVID")
+
+MarCovidGraph
+
+  
+ggplot(WS_data_us_alltime, aes(time_value, value)) + 
+  geom_line() +
+  ggtitle("Estimated Proportion of US Population Worried about COVID") + 
+  scale_x_date(date_labels="%b %y",date_breaks  ="1 month") + 
+  labs(x = "Date",
+       y = "Proportion of Population Worried")
+
+
+
+##################################### POLITICS ###########################################
+
+
+surveybypolitics = ggplot(politics_clean, aes(x = category, y = value, fill = politics)) + 
+  geom_bar(stat = "identity", position = position_dodge()) + 
+  scale_fill_manual(values =c("light blue", "red")) + 
+  ggtitle("March Republican vs Democrat Results by County") + 
+  labs(y = "Percent",
+       x = "Survey Question",
+       fill = "Party")
+
+surveybypolitics
+
+
+casesbypolitics = ggplot(politics_c, aes(x = category, y = value, fill = politics)) + 
+  geom_bar(stat = "identity", position = position_dodge()) + 
+  scale_fill_manual(values =c("light blue", "red")) + 
+  ggtitle("March Republican vs Democrat COVID cases by County") + 
+  labs(y = "Cases per 100,000",
+       x = element_blank(),
+       fill = "Party")
+
+
+casesbypolitics
+
+deathsbypolitics = ggplot(politics_d, aes(x = category, y = value*10, fill = politics)) + 
+  geom_bar(stat = "identity", position = position_dodge()) + 
+  scale_fill_manual(values =c("light blue", "red")) +
+  ggtitle("March Republican vs Democrat COVID deaths by County") + 
+  labs(y = "Deaths per 1,000,000",
+       x = element_blank(),
+       fill = "Party")
+
+deathsbypolitics
+
+
+##################################### WHY DO DEMS HAVE HIGHER COIVD RATES ###########################################
+ggplot(pd, aes(y = CC1value, fill = Politics)) + 
+  geom_boxplot() +
+  scale_fill_manual(values =c("light blue", "red")) +
+  ggtitle("COIVD cases boxplot") + 
+  labs(y = "Cases per 100,000",
+       x = element_blank(),
+       fill = "Party")
+
+ggplot(pd, aes(y = CC1value, fill = Politics)) + 
+  geom_boxplot() + 
+  coord_cartesian(ylim = quantile(pd$CC1value, c(0.05, 0.95))) + 
+  scale_fill_manual(values =c("light blue", "red")) +
+  ggtitle("COIVD cases boxplot") + 
+  labs(y = "Cases per 100,000",
+       x = element_blank(),
+       fill = "Party")
+
+# #ggplot(pd, aes(y = Dvalue, fill = Politics)) + 
+#   geom_boxplot() +
+#   scale_fill_manual(values =c("light blue", "red")) 
+# 
+# #ggplot(pd, aes(y = Dvalue, fill = Politics)) + 
+#   geom_boxplot() + 
+#   coord_cartesian(ylim = quantile(pd$CC1value, c(0.05, 0.95))) + 
+#   scale_fill_manual(values =c("light blue", "red"))
+
+
+ library(dplyr)
+ pd %>%
+    arrange(desc(CC1value)) %>%
+    slice(1:10) 
+ 
+ 
+casesbymonth  <- left_join(avg_sep20,  avg_oct20, by = "region")
+casesbymonth  <- left_join(casesbymonth,  avg_nov20, by = "region")
+casesbymonth  <- left_join(casesbymonth,  avg_dec20, by = "region")
+casesbymonth  <- left_join(casesbymonth,  avg_jan21, by = "region")
+casesbymonth  <- left_join(casesbymonth,  avg_feb21, by = "region")
+casesbymonth  <- left_join(casesbymonth,  avg_mar21, by = "region")
+ 
+casesbymonth = rename(casesbymonth,
+  SepCases = value.x,
+  OctCases = value.y,
+  NovCases = value.x.x,
+  DecCases = value.y.y,
+  JanCases = value.x.x.x,
+  FebCases = value.y.y.y,
+  MarCases = value,
+)
+
+
+ 
 ```
 
 
