@@ -1,5 +1,5 @@
 ---
-title: "COIVD Visualizatoin Project"
+title: "COVID Visualizatoin Project"
 author: "Ethan Gerak"
 date: "4/13/2021"
 output:
@@ -36,7 +36,49 @@ politics_d <- read_excel("politics_d.xlsx")
 ```
 
 
-```{r data, include = FALSE}
+
+```{r function creation }
+
+stateFromLower <-function(x) {
+   #read 52 state codes into local variable [includes DC (Washington D.C. and PR (Puerto Rico)]
+  st.codes<-data.frame(
+                      state=as.factor(c("ak", "al", "ar", "az", "ca", "co", "ct", "dc", "de", "fl", "ga",
+                                         "hi", "ia", "id", "il", "in", "ks", "ky", "la", "ma", "md", "me",
+                                         "mi", "mn", "mo", "ms",  "mt", "nc", "nd", "ne", "nh", "nj", "nm",
+                                         "nv", "ny", "oh", "ok", "or", "pa", "pr", "ri", "sc", "sd", "tn",
+                                         "tx", "ut", "va", "vt", "wa", "wi", "wv", "wy")),
+                      full=as.factor(c("alaska","alabama","arkansas","arizona","california","colorado",
+                                       "connecticut","district of columbia","delaware","florida","georgia",
+                                       "hawaii","iowa","idaho","illinois","indiana","kansas","kentucky",
+                                       "louisiana","massachusetts","maryland","maine","michigan","minnesota",
+                                       "missouri","mississippi","montana","north carolina","north dakota",
+                                       "nebraska","new hampshire","new jersey","new mexico","nevada",
+                                       "new york","ohio","oklahoma","oregon","pennsylvania","puerto rico",
+                                       "rhode island","south carolina","south dakota","tennessee","texas",
+                                       "utah","virginia","vermont","washington","wisconsin",
+                                       "west virginia","wyoming"))
+                       )
+     #create an nx1 data.frame of state codes from source column
+  st.x<-data.frame(state=x)
+     #match source codes with codes from 'st.codes' local variable and use to return the full state name
+  refac.x<-st.codes$full[match(st.x$state,st.codes$state)]
+     #return the full state names in the same order in which they appeared in the original source
+  return(refac.x)
+ 
+}
+
+avg = function(data) {
+  avgCC = data %>% group_by(geo_value) %>% summarise(avg = mean(value))
+   avgCC = avgCC %>% rename(
+   region = geo_value,
+   value= avg)
+}
+
+
+
+```
+
+```{r COVID CASES data, include = FALSE}
 ###https://delphi.cmu.edu/covidcast/export/
 
 cc_data_sep20 <- suppressMessages(
@@ -80,9 +122,10 @@ cc_data_us_alltime = covidcast_signal(data_source = "indicator-combination", sig
                  start_day = "2020-09-08", end_day = "2021-03-31",
                  geo_type = "nation")
 
+```
 
-########################################################################################################################
 
+```{r COVID WORRIED data, include = FALSE}
 WS_data_sep20 <- suppressMessages(
 covidcast_signal(data_source = "fb-survey", signal = "smoothed_worried_become_ill",
                  start_day = "2020-09-08", end_day = "2020-09-30",
@@ -124,8 +167,9 @@ WS_data_us_alltime = covidcast_signal(data_source = "fb-survey", signal = "smoot
                  start_day = "2020-09-08", end_day = "2021-03-31",
                  geo_type = "nation")
 
+```
 
-##############################################################################
+```{r COVID SURVEY data, include = FALSE}
 MW_data <- suppressMessages(
 covidcast_signal(data_source = "fb-survey", signal = "smoothed_wearing_mask_7d",
                  start_day = "2021-03-01", end_day = "2021-03-31",
@@ -265,45 +309,101 @@ test = pd %>% group_by(Politics) %>% summarise("Percent of Mask Wearers" = media
 
 
 
+```
 
 
-################################################################################
-
-stateFromLower <-function(x) {
-   #read 52 state codes into local variable [includes DC (Washington D.C. and PR (Puerto Rico)]
-  st.codes<-data.frame(
-                      state=as.factor(c("ak", "al", "ar", "az", "ca", "co", "ct", "dc", "de", "fl", "ga",
-                                         "hi", "ia", "id", "il", "in", "ks", "ky", "la", "ma", "md", "me",
-                                         "mi", "mn", "mo", "ms",  "mt", "nc", "nd", "ne", "nh", "nj", "nm",
-                                         "nv", "ny", "oh", "ok", "or", "pa", "pr", "ri", "sc", "sd", "tn",
-                                         "tx", "ut", "va", "vt", "wa", "wi", "wv", "wy")),
-                      full=as.factor(c("alaska","alabama","arkansas","arizona","california","colorado",
-                                       "connecticut","district of columbia","delaware","florida","georgia",
-                                       "hawaii","iowa","idaho","illinois","indiana","kansas","kentucky",
-                                       "louisiana","massachusetts","maryland","maine","michigan","minnesota",
-                                       "missouri","mississippi","montana","north carolina","north dakota",
-                                       "nebraska","new hampshire","new jersey","new mexico","nevada",
-                                       "new york","ohio","oklahoma","oregon","pennsylvania","puerto rico",
-                                       "rhode island","south carolina","south dakota","tennessee","texas",
-                                       "utah","virginia","vermont","washington","wisconsin",
-                                       "west virginia","wyoming"))
-                       )
-     #create an nx1 data.frame of state codes from source column
-  st.x<-data.frame(state=x)
-     #match source codes with codes from 'st.codes' local variable and use to return the full state name
-  refac.x<-st.codes$full[match(st.x$state,st.codes$state)]
-     #return the full state names in the same order in which they appeared in the original source
-  return(refac.x)
+```{r BoxPlot Cleaning}
  
-}
+library(dplyr)
+ pd %>%
+    arrange(desc(CC1value)) %>%
+    slice(1:10) 
 
-avg = function(data) {
-  avgCC = data %>% group_by(geo_value) %>% summarise(avg = mean(value))
-   avgCC = avgCC %>% rename(
-   region = geo_value,
-   value= avg)
-}
+ avg_sep20 = avg(cc_data_sep20)
+avg_sep20$region = toupper(avg_sep20$region)
 
+avg_oct20 = avg(cc_data_oct20)
+avg_oct20$region = toupper(avg_oct20$region)
+
+avg_nov20 = avg(cc_data_nov20)
+avg_nov20$region = toupper(avg_nov20$region)
+
+avg_dec20 = avg(cc_data_dec20)
+avg_dec20$region = toupper(avg_dec20$region)
+
+avg_jan21 = avg(cc_data_jan21)
+avg_jan21$region = toupper(avg_jan21$region)
+
+avg_feb21 = avg(cc_data_feb21)
+avg_feb21$region = toupper(avg_feb21$region)
+
+
+avg_mar21 = avg(cc_data_mar21)
+avg_mar21$region = toupper(avg_mar21$region)
+
+ 
+casesbymonth  <- left_join(avg_sep20,  avg_oct20, by = "region")
+casesbymonth  <- left_join(casesbymonth,  avg_nov20, by = "region")
+casesbymonth  <- left_join(casesbymonth,  avg_dec20, by = "region")
+casesbymonth  <- left_join(casesbymonth,  avg_jan21, by = "region")
+casesbymonth  <- left_join(casesbymonth,  avg_feb21, by = "region")
+casesbymonth  <- left_join(casesbymonth,  avg_mar21, by = "region")
+ 
+casesbymonth = rename(casesbymonth,
+  SepCases = value.x,
+  OctCases = value.y,
+  NovCases = value.x.x,
+  DecCases = value.y.y,
+  JanCases = value.x.x.x,
+  FebCases = value.y.y.y,
+  MarCases = value,
+)
+
+stack(casesbymonth)
+casesbymonthstack = stack(casesbymonth, select = c(-region))
+
+avg_sep20 = avg(WS_data_sep20)
+avg_sep20$region = toupper(avg_sep20$region)
+
+avg_oct20 = avg(WS_data_oct20)
+avg_oct20$region = toupper(avg_oct20$region)
+
+avg_nov20 = avg(WS_data_nov20)
+avg_nov20$region = toupper(avg_nov20$region)
+
+avg_dec20 = avg(WS_data_dec20)
+avg_dec20$region = toupper(avg_dec20$region)
+
+avg_jan21 = avg(WS_data_jan21)
+avg_jan21$region = toupper(avg_jan21$region)
+
+avg_feb21 = avg(WS_data_feb21)
+avg_feb21$region = toupper(avg_feb21$region)
+
+
+avg_mar21 = avg(WS_data_mar21)
+avg_mar21$region = toupper(avg_mar21$region)
+
+
+worrybymonth  <- left_join(avg_sep20,  avg_oct20, by = "region")
+worrybymonth  <- left_join(worrybymonth,  avg_nov20, by = "region")
+worrybymonth  <- left_join(worrybymonth,  avg_dec20, by = "region")
+worrybymonth  <- left_join(worrybymonth,  avg_jan21, by = "region")
+worrybymonth  <- left_join(worrybymonth,  avg_feb21, by = "region")
+worrybymonth  <- left_join(worrybymonth,  avg_mar21, by = "region")
+ 
+worrybymonth = rename(worrybymonth,
+  SepWorry = value.x,
+  OctWorry = value.y,
+  NovWorry = value.x.x,
+  DecWorry = value.y.y,
+  JanWorry = value.x.x.x,
+  FebWorry = value.y.y.y,
+  MarWorry = value,
+)
+
+stack(worrybymonth)
+worrybymonthstack = stack(worrybymonth, select = c(-region))
 
 
 ```
@@ -406,7 +506,7 @@ ggplot(cc_data_us_alltime, aes(time_value, value)) +
   labs(x = "Date",
        y = "Positive Cases")
 
-##################################### FEAR OF COIVD ###########################################
+##################################### FEAR OF COVID ###########################################
 
 avg_sep20 = avg(WS_data_sep20)
 avg_sep20$region = toupper(avg_sep20$region)
@@ -509,13 +609,14 @@ ggplot(WS_data_us_alltime, aes(time_value, value)) +
 ##################################### POLITICS ###########################################
 
 
-surveybypolitics = ggplot(politics_clean, aes(x = category, y = value, fill = politics)) + 
+surveybypolitics = ggplot(politics_clean, aes(x = reorder(category, + value), y = value, fill = politics)) + 
   geom_bar(stat = "identity", position = position_dodge()) + 
   scale_fill_manual(values =c("light blue", "red")) + 
-  ggtitle("March Republican vs Democrat Results by County") + 
+  ggtitle("March Republican vs Democrat Results by County") +
   labs(y = "Percent",
        x = "Survey Question",
-       fill = "Party")
+       fill = "Party") +
+  coord_flip()
 
 surveybypolitics
 
@@ -526,7 +627,8 @@ casesbypolitics = ggplot(politics_c, aes(x = category, y = value, fill = politic
   ggtitle("March Republican vs Democrat COVID cases by County") + 
   labs(y = "Cases per 100,000",
        x = element_blank(),
-       fill = "Party")
+       fill = "Party") 
+  
 
 
 casesbypolitics
@@ -542,11 +644,12 @@ deathsbypolitics = ggplot(politics_d, aes(x = category, y = value*10, fill = pol
 deathsbypolitics
 
 
-##################################### WHY DO DEMS HAVE HIGHER COIVD RATES ###########################################
+##################################### WHY DO DEMS HAVE HIGHER COVID RATES ###########################################
+
 ggplot(pd, aes(y = CC1value, fill = Politics)) + 
   geom_boxplot() +
   scale_fill_manual(values =c("light blue", "red")) +
-  ggtitle("COIVD cases boxplot") + 
+  ggtitle("COVID cases boxplot") + 
   labs(y = "Cases per 100,000",
        x = element_blank(),
        fill = "Party")
@@ -555,7 +658,7 @@ ggplot(pd, aes(y = CC1value, fill = Politics)) +
   geom_boxplot() + 
   coord_cartesian(ylim = quantile(pd$CC1value, c(0.05, 0.95))) + 
   scale_fill_manual(values =c("light blue", "red")) +
-  ggtitle("COIVD cases boxplot") + 
+  ggtitle("COVID cases boxplot") + 
   labs(y = "Cases per 100,000",
        x = element_blank(),
        fill = "Party")
@@ -570,31 +673,18 @@ ggplot(pd, aes(y = CC1value, fill = Politics)) +
 #   scale_fill_manual(values =c("light blue", "red"))
 
 
- library(dplyr)
- pd %>%
-    arrange(desc(CC1value)) %>%
-    slice(1:10) 
- 
- 
-casesbymonth  <- left_join(avg_sep20,  avg_oct20, by = "region")
-casesbymonth  <- left_join(casesbymonth,  avg_nov20, by = "region")
-casesbymonth  <- left_join(casesbymonth,  avg_dec20, by = "region")
-casesbymonth  <- left_join(casesbymonth,  avg_jan21, by = "region")
-casesbymonth  <- left_join(casesbymonth,  avg_feb21, by = "region")
-casesbymonth  <- left_join(casesbymonth,  avg_mar21, by = "region")
- 
-casesbymonth = rename(casesbymonth,
-  SepCases = value.x,
-  OctCases = value.y,
-  NovCases = value.x.x,
-  DecCases = value.y.y,
-  JanCases = value.x.x.x,
-  FebCases = value.y.y.y,
-  MarCases = value,
-)
+casesbymonthstack %>% group_by(ind) %>% 
+  ggplot(aes(y = values, fill = ind)) + 
+  geom_boxplot()
+
+worrybymonthstack %>% group_by(ind) %>% 
+  ggplot(aes(y = values, fill = ind)) + 
+  geom_boxplot()
 
 
  
 ```
+
+
 
 
